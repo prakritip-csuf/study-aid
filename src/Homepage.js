@@ -2,6 +2,8 @@ import React from 'react';
 import { Navbar, Nav, Container } from 'react-bootstrap';
 import './Homepage.css';
 import homepageImage from './homepage-image.jpg'; // Place your image in src or use an online URL
+import Flashcards from './Flashcards';
+import AboutUs from './aboutUs';
 
 function Homepage() {
   return (
@@ -16,7 +18,7 @@ function Homepage() {
               <Nav.Link href="#flashcard">Flashcard</Nav.Link>
               <Nav.Link href="#quiz">Quiz</Nav.Link>
               <Nav.Link href="#courses">Courses</Nav.Link>
-              <Nav.Link href="#contact">Contact Us</Nav.Link>
+              <Nav.Link href="#aboutUs">About Us</Nav.Link>
             </Nav>
           </Navbar.Collapse>
         </Container>
@@ -29,6 +31,16 @@ function Homepage() {
           <img className="homepage-image" src={homepageImage} alt="Study Aid" />
         </Container>
       </header>
+
+      {/* Flashcards section: anchor target for #flashcard */}
+      <section id="flashcard">
+        <Flashcards />
+      </section>
+
+      {/* About Us section: anchor target for #aboutUs */}
+      <section id="aboutUs">
+        <AboutUs />
+      </section>
     </>
   );
 }

@@ -1,0 +1,99 @@
+/* Basic styles for the flashcards feature */
+
+.flashcards-root {
+  max-width: 900px;
+}
+
+.flashcard-new textarea.flashcard-input,
+.flashcard-new input.flashcard-input {
+  width: 100%;
+}
+
+.flashcards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.flashcard {
+  perspective: 1000px;
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 8px;
+  background: white;
+}
+
+.flashcard-inner {
+  cursor: pointer;
+  min-height: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform-style: preserve-3d;
+  transition: transform 0.5s;
+}
+
+.flashcard.flipped .flashcard-inner {
+  transform: rotateY(180deg);
+}
+
+.flashcard-front,
+.flashcard-back {
+  backface-visibility: hidden;
+  position: absolute;
+  inset: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.flashcard-front {
+  background: #f8f9fa;
+}
+
+.flashcard-back {
+  background: #fff3cd;
+  transform: rotateY(180deg);
+}
+
+.flashcard-text {
+  text-align: center;
+  white-space: pre-wrap;
+}
+
+.flashcard-controls {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  justify-content: center;
+}
+
+.flashcard-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.flashcard-input {
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.flashcard-edit-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  height: 1px; width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+}
