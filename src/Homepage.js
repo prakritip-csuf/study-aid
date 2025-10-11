@@ -1,11 +1,14 @@
-import React from 'react';
-import { Navbar, Nav, Container } from 'react-bootstrap';
+import React, {useState} from 'react';
+import { Navbar, Nav, Container, Button, Modal } from 'react-bootstrap';
 import './Homepage.css';
 import homepageImage from './homepage-image.jpg'; // Place your image in src or use an online URL
 import Flashcards from './Flashcards';
 import AboutUs from './aboutUs';
+import Login from './Login';
 
 function Homepage() {
+  const [showLogin, setShowLogin] = useState(false);
+
   return (
     <>
       <Navbar bg="primary" variant="dark" expand="lg" sticky="top">
@@ -20,9 +23,22 @@ function Homepage() {
               <Nav.Link href="#courses">Courses</Nav.Link>
               <Nav.Link href="#aboutUs">About Us</Nav.Link>
             </Nav>
+              <Button
+              variant="outline-light"
+              className="ms-2"
+              onClick={() => setShowLogin(true)} // show modal on click
+            >
+              Login
+            </Button>
           </Navbar.Collapse>
         </Container>
       </Navbar>
+
+      <Modal centered show={showLogin} onHide={() => setShowLogin(false)}>
+        <Modal.Body>
+          <Login />
+        </Modal.Body>
+      </Modal>
 
       <header className="homepage-header">
         <Container>
@@ -40,7 +56,7 @@ function Homepage() {
       {/* About Us section: anchor target for #aboutUs */}
       <section id="aboutUs">
         <AboutUs />
-      </section>
+      </section> 
     </>
   );
 }

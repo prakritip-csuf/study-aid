@@ -11,7 +11,7 @@ function AboutUs() {
               <h2>Prakriti Paudel</h2>
               <p className="title">Team Member</p>
               <p>Some text that describes me</p>
-              <p>example@example.com</p>
+              <p>prakritip@csu.fullerton.edu</p>
               <p>
                 <button className="buttons">Contact</button>
               </p>

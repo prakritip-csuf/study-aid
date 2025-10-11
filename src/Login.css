@@ -1,0 +1,108 @@
+.login-container {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 2rem 2.5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+
+.form-title {
+  text-align: center;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+}
+
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #34495e;
+  margin-bottom: 0.35rem;
+  font-size: 0.9rem;
+}
+
+
+.form-control {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  font-size: 1rem;
+  border: 1.8px solid #bdc3c7;
+  border-radius: 6px;
+  transition: border-color 0.3s ease;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #2980b9;
+  box-shadow: 0 0 6px rgba(41, 128, 185, 0.3);
+}
+
+
+.btn.primary-btn {
+  background-color: #2980b9;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  color: white;
+  font-size: 1.05rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 0.8rem;
+}
+
+.btn.primary-btn:hover {
+  background-color: #1c5980;
+}
+
+
+.switch-form {
+  margin-top: 1rem;
+  text-align: center;
+}
+
+.btn.link-btn {
+  background: none;
+  border: none;
+  color: #2980b9;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: underline;
+  padding: 0;
+}
+
+.btn.link-btn:hover {
+  color: #1c5980;
+}
+
+
+@media (max-width: 480px) {
+  .login-container {
+    padding: 1.5rem 1.8rem;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+
+  .btn.primary-btn {
+    font-size: 1rem;
+  }
+}
