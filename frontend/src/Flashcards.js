@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Flashcard from './Flashcard';
 import './Flashcards.css';
+import { useAuth } from './AuthContext';
 
 const STORAGE_KEY = 'study-aid:flashcards:v1';
 
@@ -9,6 +10,8 @@ function genId() {
 }
 
 function Flashcards() {
+  const { isLoggedIn, requireLogin } = useAuth();
+
   const [cards, setCards] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -30,6 +33,12 @@ function Flashcards() {
   }, [cards]);
 
   function addCard() {
+    // Require login before allowing creation
+    if (!isLoggedIn) {
+      requireLogin();
+      return;
+    }
+
     const q = newQ.trim();
     const a = newA.trim();
     if (!q && !a) return;

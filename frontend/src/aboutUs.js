@@ -4,6 +4,14 @@ import './aboutUs.css';
 function AboutUs() {
   return (
     <div className="about-root container my-4">
+      {/* Story Section */}
+      <div className="story-section mb-5 p-4 bg-light rounded shadow-sm">
+        <h2>Our Story</h2>
+        <p>
+          StudyAid was created by a group of passionate students who wanted to make studying easier and more effective for everyone. We noticed that many of our peers struggled to organize their notes, prepare for exams, and stay motivated. Our goal was to build a simple, user-friendly platform that helps students create flashcards and quizzes all in one place. We hope StudyAid empowers you to reach your academic goals and makes learning a more enjoyable experience!
+        </p>
+      </div>
+
       <div className="rows">
         <div className="columns">
           <div className="note">
