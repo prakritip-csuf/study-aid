@@ -22,9 +22,10 @@ function Header() {
           </Nav>
           {!isLoggedIn ? (
             <Button
+              as={Link}
+              to="/login"
               variant="outline-light"
               className="ms-2"
-              onClick={() => setShowLoginModal(true)}
             >
               Login
             </Button>
