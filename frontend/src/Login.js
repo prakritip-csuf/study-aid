@@ -1,12 +1,20 @@
 import React, { useState } from 'react';
 import './Login.css';
 
-function Login() {
+// Login component now accepts an optional onLogin prop which will be called when the form is submitted.
+function Login({ onLogin }) {
     const [isLogin, setIsLogin] = useState(true);
+
+    function handleSubmit(e) {
+        e.preventDefault();
+        // In this simplified app we treat any submit as a successful login/signup.
+        if (typeof onLogin === 'function') onLogin();
+    }
+
     return(
         <div className="login-container">
             <h2 className="form-title">{isLogin ? 'Login' : 'Sign Up'}</h2>
-            <form className="auth-form">
+            <form className="auth-form" onSubmit={handleSubmit}>
                 {!isLogin && (
                     <>
                         <div className="form-group">
