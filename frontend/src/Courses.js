@@ -4,7 +4,7 @@ function Courses() {
   return (
     <div className="container my-4">
       <h2>Courses</h2>
-      <p>This is a placeholder for the Courses page. Add course listings and enrollment here.</p>
+      <p>This is a placeholder for the Courses page. Implement course creation here.</p>
     </div>
   );
 }
