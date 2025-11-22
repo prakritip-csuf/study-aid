@@ -1,142 +1,127 @@
-import React, { useEffect, useState } from 'react';
-import Flashcard from './Flashcard';
-import './Flashcards.css';
-import { useAuth } from './AuthContext';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import "./Flashcards.css";
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
-
-function Flashcards() {
-  const { isLoggedIn, requireLogin } = useAuth();
-
-  const [cards, setCards] = useState([]);
-  const [newQ, setNewQ] = useState('');
-  const [newA, setNewA] = useState('');
+export default function Flashcards() {
+  const [flashcardSets, setFlashcardSets] = useState([]);
+  const [newSetTitle, setNewSetTitle] = useState("");
+  const [newSetDesc, setNewSetDesc] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
-  // Fetch flashcards from backend on component mount
-  useEffect(() => {
-    fetchCards();
-  }, []);
+  const API_URL = "http://localhost:5000/api";
 
-  async function fetchCards() {
+  const loadSets = async () => {
     try {
       setLoading(true);
-      setError('');
-      const res = await fetch(`${API_URL}/api/flashcards`);
+      const res = await fetch(`${API_URL}/flashcards/sets`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      setCards(data);
+      setFlashcardSets(data || []);
+      setLoading(false);
     } catch (err) {
-      setError(`Failed to load flashcards: ${err.message}`);
-      console.error(err);
-    } finally {
+      console.error("LoadSets Error:", err);
+      setError("Failed to load flashcard sets.");
       setLoading(false);
     }
-  }
+  };
 
-  async function addCard() {
-    if (!isLoggedIn) {
-      requireLogin();
+  useEffect(() => {
+    loadSets();
+  }, []);
+
+  const createSet = async () => {
+    if (!newSetTitle.trim()) {
+      setError("Title is required.");
       return;
     }
-
-    const q = newQ.trim();
-    const a = newA.trim();
-    if (!q && !a) return;
-
     try {
-      setError('');
-      const res = await fetch(`${API_URL}/api/flashcards`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: q, answer: a, tags: [] })
+      const res = await fetch(`${API_URL}/flashcards/sets`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newSetTitle, description: newSetDesc }),
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const newCard = await res.json();
-      setCards(prev => [newCard, ...prev]);
-      setNewQ('');
-      setNewA('');
+      const responseBody = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(responseBody.error || "Failed to create set.");
+        return;
+      }
+      setNewSetTitle("");
+      setNewSetDesc("");
+      setError("");
+      loadSets();
     } catch (err) {
-      setError(`Failed to add card: ${err.message}`);
-      console.error(err);
+      console.error("CreateSet Error:", err);
+      setError("Network error.");
     }
-  }
+  };
 
-  async function updateCard(updated) {
+  const deleteSet = async (id, e) => {
+    e.stopPropagation(); // Prevent Link navigation
+    if (!window.confirm("Are you sure you want to delete this set?")) return;
     try {
-      setError('');
-      const res = await fetch(`${API_URL}/api/flashcards/${updated.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: updated.question,
-          answer: updated.answer,
-          tags: updated.tags || []
-        })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const updatedCard = await res.json();
-      setCards(prev => prev.map(c => (c.id === updated.id ? updatedCard : c)));
+      const res = await fetch(`${API_URL}/flashcards/sets/${id}`, { method: "DELETE" });
+      const data = await res.json();
+      if (data.success) {
+        setFlashcardSets(flashcardSets.filter((set) => set.id !== id));
+      } else {
+        alert("Failed to delete set.");
+      }
     } catch (err) {
-      setError(`Failed to update card: ${err.message}`);
-      console.error(err);
+      console.error("DeleteSet Error:", err);
+      alert("Network error while deleting set.");
     }
-  }
-
-  async function deleteCard(id) {
-    try {
-      setError('');
-      const res = await fetch(`${API_URL}/api/flashcards/${id}`, {
-        method: 'DELETE'
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      setCards(prev => prev.filter(c => c.id !== id));
-    } catch (err) {
-      setError(`Failed to delete card: ${err.message}`);
-      console.error(err);
-    }
-  }
+  };
 
   return (
-    <div className="flashcards-root container my-4">
-      <h2>Flashcards</h2>
+    <div className="flashcards-container">
+      <h2 className="page-title">Your Flashcard Sets</h2>
+      {error && <p className="error-text">{error}</p>}
 
-      {error && <div className="alert alert-danger">{error}</div>}
-
-      <div className="flashcard-new mb-3">
+      {/* Create Set */}
+      <div className="create-box">
+        <h3>Create New Flashcard Set</h3>
         <input
-          className="form-control mb-2"
-          placeholder="Enter question"
-          value={newQ}
-          onChange={(e) => setNewQ(e.target.value)}
-          disabled={loading}
+          type="text"
+          placeholder="Set Title"
+          value={newSetTitle}
+          onChange={(e) => setNewSetTitle(e.target.value)}
+          className="input-field"
         />
         <textarea
-          className="form-control mb-2"
-          placeholder="Enter answer"
-          value={newA}
-          onChange={(e) => setNewA(e.target.value)}
-          disabled={loading}
+          placeholder="Description (optional)"
+          value={newSetDesc}
+          onChange={(e) => setNewSetDesc(e.target.value)}
+          className="textarea-field"
         />
-        <div className="d-flex gap-2">
-          <button className="btn btn-primary" onClick={addCard} disabled={loading}>
-            {loading ? 'Adding...' : 'Add Card'}
-          </button>
-          <button className="btn btn-outline-secondary" onClick={() => { setNewQ(''); setNewA(''); }} disabled={loading}>Clear</button>
-          <button className="btn btn-outline-info" onClick={fetchCards} disabled={loading}>Refresh</button>
-        </div>
+        <button className="btn-primary" onClick={createSet}>
+          Create Set
+        </button>
       </div>
 
-      <div className="flashcards-grid">
-        {loading && cards.length === 0 && <p className="text-muted">Loading flashcards...</p>}
-        {!loading && cards.length === 0 && <p className="text-muted">No flashcards yet — add one above.</p>}
-        {cards.map(card => (
-          <Flashcard key={card.id} card={card} onUpdate={updateCard} onDelete={deleteCard} />
-        ))}
-      </div>
+      {/* List of Sets */}
+      {loading ? (
+        <p>Loading...</p>
+      ) : flashcardSets.length === 0 ? (
+        <p>No flashcard sets found.</p>
+      ) : (
+        <div className="sets-grid">
+          {flashcardSets.map((set) => (
+            <div key={set.id} className="set-item">
+              <Link to={`/flashcards/${set.id}`} className="set-link">
+                <h4>{set.title}</h4>
+                <p>{set.description}</p>
+              </Link>
+              <button
+                className="btn-delete"
+                onClick={(e) => deleteSet(set.id, e)}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-export default Flashcards;
