@@ -15,46 +15,65 @@ function shuffle(array) {
 function Quiz() {
   const [flashcards, setFlashcards] = useState([]);
   const [shuffledQuestions, setShuffledQuestions] = useState([]);
+  const [sets, setSets] = useState([]);
+  const [selectedSet, setSelectedSet] = useState(null);
+  const [loadingSets, setLoadingSets] = useState(false);
   const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState([]); // user's selected answers per question
+  const [results, setResults] = useState([]); // saved quiz attempts
+  const [viewingResultIndex, setViewingResultIndex] = useState(null);
   const [choices, setChoices] = useState([]);
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
-  const { id } = useParams();
   const API_URL = 'http://localhost:5000/api';
+  const RESULTS_KEY = 'study-aid:quiz-results:v1';
 
+  // Load available flashcard sets from backend and detect localStorage set
   useEffect(() => {
-    async function loadFromSet() {
-      if (id) {
-        try {
-          const res = await fetch(`${API_URL}/flashcards/sets/${id}/cards`);
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          setFlashcards(data || []);
-          setShuffledQuestions(shuffle(data || []));
-          setCurrent(0);
-        } catch (err) {
-          console.error('Failed to load set cards for quiz', err);
-          setFlashcards([]);
-          setShuffledQuestions([]);
-        }
-      } else {
-        // fallback to localStorage (legacy behavior)
+    let mounted = true;
+    async function loadSets() {
+      setLoadingSets(true);
+      try {
+        const res = await fetch(`${API_URL}/flashcards/sets`);
+        const data = await res.json();
+        if (!mounted) return;
+        const list = Array.isArray(data) ? data : [];
+
+        // If local storage has cards, add a special 'local' set option
         try {
           const raw = localStorage.getItem(STORAGE_KEY);
-          const cards = raw ? JSON.parse(raw) : [];
-          setFlashcards(cards);
-          setShuffledQuestions(shuffle(cards));
-          setCurrent(0);
+          if (raw) {
+            list.unshift({ id: 'local', title: 'Local Flashcards (browser)' });
+          }
         } catch (e) {
-          setFlashcards([]);
-          setShuffledQuestions([]);
+          // ignore
         }
+
+        setSets(list);
+
+        // Default selection: local if present, otherwise first backend set
+        if (list.length > 0) {
+          setSelectedSet(list[0].id);
+        }
+      } catch (err) {
+        console.error('Failed to load sets', err);
+      } finally {
+        if (mounted) setLoadingSets(false);
       }
     }
-    loadFromSet();
-  }, [id]);
+    loadSets();
+    // load past results
+    try {
+      const raw = localStorage.getItem(RESULTS_KEY);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setResults(parsed);
+    } catch (e) {
+      // ignore
+    }
+    return () => { mounted = false; };
+  }, []);
 
   // TEMPORARY: Random word bank for distractors until AI-generated options are implemented
   const WORD_BANK = [
@@ -67,6 +86,41 @@ function Quiz() {
     'Protocol', 'Server', 'Client', 'Thread', 'Process', 'Virtualization', 'Cloud', 'API', 'Encryption', 'Decryption', 'Machine Learning', 'Artificial Intelligence', 'Network', 'Packet', 'Router', 'Switch', 
     'Firewall', 'Operating System', 'Kernel', 'Shell', 'Script', 'Quantum', 'Paradigm', 'Syntax', 'Compile', 'Debug', 'Module', 'Pixel', 'Bandwidth', 'Topology', 'Sophomore', 'Junior', 'Senior', 'Graduate', 
   ];
+
+  // When selected set or flashcards change, load cards and prepare choices
+  useEffect(() => {
+    let mounted = true;
+    async function loadCardsForSelectedSet() {
+      if (!selectedSet) return;
+      try {
+        let cards = [];
+        if (selectedSet === 'local') {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          cards = raw ? JSON.parse(raw) : [];
+        } else {
+          const res = await fetch(`${API_URL}/flashcards/sets/${selectedSet}/cards`);
+          if (res.ok) {
+            cards = await res.json();
+          } else {
+            cards = [];
+          }
+        }
+        if (!mounted) return;
+        setFlashcards(cards);
+        setShuffledQuestions(shuffle(cards));
+        setCurrent(0);
+      } catch (err) {
+        console.error('Failed to load cards for set', err);
+        if (mounted) {
+          setFlashcards([]);
+          setShuffledQuestions([]);
+        }
+      }
+    }
+    loadCardsForSelectedSet();
+    return () => { mounted = false; };
+  }, [selectedSet]);
+
 
   useEffect(() => {
     if (shuffledQuestions.length > 0 && current < shuffledQuestions.length) {
@@ -91,11 +145,22 @@ function Quiz() {
       const allChoices = shuffle([correct, ...allIncorrects.slice(0, 3)]);
       setChoices(allChoices);
       setSelected(null);
+      // ensure answers array matches length
+      setAnswers((prev) => {
+        const next = prev ? prev.slice() : [];
+        while (next.length < shuffledQuestions.length) next.push(null);
+        return next;
+      });
     }
   }, [shuffledQuestions, current, flashcards]);
 
   function handleSelect(choice) {
     setSelected(choice);
+    setAnswers(prev => {
+      const next = prev ? prev.slice() : [];
+      next[current] = choice;
+      return next;
+    });
   }
 
   function handleNext() {
@@ -105,6 +170,32 @@ function Quiz() {
     if (current + 1 < shuffledQuestions.length) {
       setCurrent(c => c + 1);
     } else {
+      // build result details and save
+      const items = shuffledQuestions.map((q, idx) => ({
+        question: q.question,
+        correctAnswer: q.answer,
+        selectedAnswer: answers[idx] ?? null,
+        correct: (answers[idx] ?? null) === q.answer
+      }));
+      const total = shuffledQuestions.length;
+      const finalScore = items.reduce((acc, it) => acc + (it.correct ? 1 : 0), 0);
+      const result = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        setId: selectedSet,
+        setTitle: sets.find(s => s.id === selectedSet)?.title || (selectedSet === 'local' ? 'Local Flashcards' : ''),
+        score: finalScore,
+        total,
+        items,
+      };
+      const nextResults = [result, ...results];
+      setResults(nextResults);
+      try {
+        localStorage.setItem(RESULTS_KEY, JSON.stringify(nextResults));
+      } catch (e) {
+        // ignore
+      }
+      setScore(finalScore);
       setShowResult(true);
     }
   }
@@ -123,12 +214,62 @@ function Quiz() {
       <div className="container my-4">
         <h2>Quiz Complete!</h2>
         <p>Your score: {score} / {shuffledQuestions.length}</p>
-        <button className="btn btn-primary" onClick={() => {
-          setShuffledQuestions(shuffle(flashcards));
-          setCurrent(0);
-          setScore(0);
-          setShowResult(false);
-        }}>Restart Quiz</button>
+        <div className="d-flex gap-2 mb-3">
+          <button className="btn btn-primary" onClick={() => {
+            setShuffledQuestions(shuffle(flashcards));
+            setCurrent(0);
+            setScore(0);
+            setAnswers([]);
+            setViewingResultIndex(null);
+            setShowResult(false);
+          }}>Restart Quiz</button>
+        </div>
+        {/* Past Results list for this set */}
+        <div className="results-list mb-3">
+          <h4>Past Attempts ({results.filter(r => r.setId === selectedSet).length})</h4>
+          <p>Best score: {(() => {
+            const setResults = results.filter(r => r.setId === selectedSet);
+            if (setResults.length === 0) return '-';
+            return Math.max(...setResults.map(r => r.score)) + ' / ' + (setResults[0].total || '-');
+          })()}</p>
+          <ul className="list-group">
+            {results.filter(r => r.setId === selectedSet).map((r, idx) => (
+              <li key={r.id} className="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>{new Date(r.timestamp).toLocaleString()}</strong>
+                  <div>{r.score} / {r.total}</div>
+                </div>
+                <div className="d-flex gap-2">
+                  <button className="btn btn-sm btn-outline-primary" onClick={() => setViewingResultIndex(idx)}>View</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          {/* Show result details when a past attempt is selected */}
+          {viewingResultIndex !== null && (() => {
+            const setResults = results.filter(r => r.setId === selectedSet);
+            const r = setResults[viewingResultIndex];
+            if (!r) return null;
+            return (
+              <div className="past-result mb-3 mt-3">
+                <h4>Attempt details</h4>
+                <p><strong>{new Date(r.timestamp).toLocaleString()}</strong> — {r.score} / {r.total}</p>
+                <ul className="list-group">
+                  {r.items.map((it, i) => (
+                    <li key={i} className={`list-group-item ${it.correct ? 'list-group-item-success' : 'list-group-item-danger'}`}>
+                      <div><strong>Q:</strong> {it.question}</div>
+                      <div><strong>Your answer:</strong> {it.selectedAnswer ?? '(no answer)'}</div>
+                      <div><strong>Correct:</strong> {it.correctAnswer}</div>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2">
+                  <button className="btn btn-sm btn-outline-secondary" onClick={() => setViewingResultIndex(null)}>Close</button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       </div>
     );
   }
@@ -138,6 +279,22 @@ function Quiz() {
   return (
     <div className="container my-4">
       <h2>Quiz</h2>
+      <div className="mb-3">
+        <label htmlFor="setSelect"><strong>Choose flashcard set:</strong></label>
+        {loadingSets ? (
+          <div>Loading sets…</div>
+        ) : (
+          <div className="d-flex gap-2 my-2">
+            <select id="setSelect" className="form-select" value={selectedSet || ''} onChange={(e) => { setSelectedSet(e.target.value); setViewingResultIndex(null); }}>
+              <option value="">-- Select a set --</option>
+              {sets.map((s) => (
+                <option key={s.id} value={s.id}>{s.title || (s.id === 'local' ? 'Local Flashcards (browser)' : `Set ${s.id}`)}</option>
+              ))}
+            </select>
+            <button className="btn btn-outline-primary" onClick={() => { setShuffledQuestions(shuffle(flashcards)); setCurrent(0); setScore(0); setAnswers([]); setViewingResultIndex(null); setShowResult(false); }}>Start Quiz</button>
+          </div>
+        )}
+      </div>
       <div className="mb-3">
         <strong>Question {current + 1} of {shuffledQuestions.length}:</strong>
         <div className="mt-2 mb-3">{card.question}</div>
@@ -153,6 +310,7 @@ function Quiz() {
             </button>
           ))}
         </div>
+        <hr />
         {selected !== null && (
           <div className="mt-3">
             {selected === card.answer ? (

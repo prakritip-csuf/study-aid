@@ -17,7 +17,6 @@ function Header() {
             <Nav.Link as={Link} to="/">Home</Nav.Link>
             <Nav.Link as={Link} to="/flashcards">Flashcards</Nav.Link>
             <Nav.Link as={Link} to="/quiz">Quizzes</Nav.Link>
-            <Nav.Link as={Link} to="/courses">Courses</Nav.Link>
             <Nav.Link as={Link} to="/about">About Us</Nav.Link>
           </Nav>
           {!isLoggedIn ? (

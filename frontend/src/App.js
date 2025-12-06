@@ -6,7 +6,6 @@ import Homepage from './Homepage';
 import Flashcards from './Flashcards';
 import AboutUs from './aboutUs';
 import Quiz from './Quiz';
-import Courses from './Courses';
 import RequireAuth from './RequireAuth';
 import LoginPage from './LoginPage';
 import FlashcardSetView from './FlashcardSetView';
@@ -32,16 +31,6 @@ function App() {
           <Route path="/quiz" element={
             <RequireAuth>
               <Quiz />
-            </RequireAuth>
-          } />
-          <Route path="/quiz/:id" element={
-            <RequireAuth>
-              <Quiz />
-            </RequireAuth>
-          } />
-          <Route path="/courses" element={
-            <RequireAuth>
-              <Courses />
             </RequireAuth>
           } />
           <Route path="/login" element={<LoginPage />} />
