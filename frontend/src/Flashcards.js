@@ -8,6 +8,12 @@ export default function Flashcards() {
   const [newSetDesc, setNewSetDesc] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showGenerator, setShowGenerator] = useState(false);
+  const [topic, setTopic] = useState("");
+  const [count, setCount] = useState(5);
+  const [genLoading, setGenLoading] = useState(false);
+  const [genError, setGenError] = useState("");
+  const [genSuccess, setGenSuccess] = useState("");
 
   const API_URL = "http://localhost:5000/api";
 
@@ -56,6 +62,43 @@ export default function Flashcards() {
     }
   };
 
+  const generateFlashcards = async () => {
+    setGenError("");
+    setGenSuccess("");
+    if (!topic.trim()) {
+      setGenError("Please enter a topic to generate flashcards.");
+      return;
+    }
+
+    setGenLoading(true);
+    try {
+      const payload = { topic: topic.trim(), count: Number(count), create_set: true, set_title: `AI: ${topic.trim()}` };
+      const res = await fetch(`${API_URL}/flashcards/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setGenError(body.error || `Error: ${res.status}`);
+        setGenLoading(false);
+        return;
+      }
+
+      setGenSuccess(`Generated ${Array.isArray(body) ? body.length : 0} flashcards.`);
+      setTopic("");
+      setCount(5);
+      // refresh sets list to include the new set
+      await loadSets();
+    } catch (err) {
+      console.error("Generate Error:", err);
+      setGenError("Network error while generating flashcards.");
+    } finally {
+      setGenLoading(false);
+    }
+  };
+
   const deleteSet = async (id, e) => {
     e.stopPropagation(); // Prevent Link navigation
     if (!window.confirm("Are you sure you want to delete this set?")) return;
@@ -78,26 +121,74 @@ export default function Flashcards() {
       <h2 className="page-title">Your Flashcard Sets</h2>
       {error && <p className="error-text">{error}</p>}
 
-      {/* Create Set */}
-      <div className="create-box">
-        <h3>Create New Flashcard Set</h3>
-        <input
-          type="text"
-          placeholder="Set Title"
-          value={newSetTitle}
-          onChange={(e) => setNewSetTitle(e.target.value)}
-          className="input-field"
-        />
-        <textarea
-          placeholder="Description (optional)"
-          value={newSetDesc}
-          onChange={(e) => setNewSetDesc(e.target.value)}
-          className="textarea-field"
-        />
-        <button className="btn-primary" onClick={createSet}>
-          Create Set
+      {/* Tabs */}
+      <div className="tabs" style={{ marginBottom: 16 }}>
+        <button
+          className={`tab-btn ${!showGenerator ? 'active' : ''}`}
+          onClick={() => setShowGenerator(false)}
+        >
+          Sets
+        </button>
+        <button
+          className={`tab-btn ${showGenerator ? 'active' : ''}`}
+          onClick={() => setShowGenerator(true)}
+          style={{ marginLeft: 8 }}
+        >
+          AI Generate
         </button>
       </div>
+
+      {/* Create Set or AI Generator (tabbed) */}
+      {!showGenerator ? (
+        <div className="create-box">
+          <h3>Create New Flashcard Set</h3>
+          <input
+            type="text"
+            placeholder="Set Title"
+            value={newSetTitle}
+            onChange={(e) => setNewSetTitle(e.target.value)}
+            className="input-field"
+          />
+          <textarea
+            placeholder="Description (optional)"
+            value={newSetDesc}
+            onChange={(e) => setNewSetDesc(e.target.value)}
+            className="textarea-field"
+          />
+          <button className="btn-primary" onClick={createSet}>
+            Create Set
+          </button>
+        </div>
+      ) : (
+        <div className="create-box">
+          <h3>Generate Flashcards with AI</h3>
+          <input
+            type="text"
+            placeholder="Topic (e.g., Photosynthesis)"
+            value={topic}
+            onChange={(e) => setTopic(e.target.value)}
+            className="input-field"
+            disabled={genLoading}
+          />
+          <input
+            type="number"
+            min="1"
+            max="20"
+            value={count}
+            onChange={(e) => setCount(e.target.value)}
+            className="input-field"
+            disabled={genLoading}
+            style={{ width: 120 }}
+          />
+          <div style={{ marginTop: 8 }}>
+            <button className="btn-primary" onClick={generateFlashcards} disabled={genLoading}>
+              {genLoading ? 'Generating...' : 'Generate with AI'}
+            </button>
+          </div>
+          {genError && <p className="error-text" style={{ marginTop: 8 }}>{genError}</p>}
+          {genSuccess && <p className="success-text" style={{ marginTop: 8 }}>{genSuccess}</p>}
+        </div>
+      )}
 
       {/* List of Sets */}
       {loading ? (

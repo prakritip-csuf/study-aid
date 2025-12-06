@@ -34,6 +34,11 @@ function App() {
               <Quiz />
             </RequireAuth>
           } />
+          <Route path="/quiz/:id" element={
+            <RequireAuth>
+              <Quiz />
+            </RequireAuth>
+          } />
           <Route path="/courses" element={
             <RequireAuth>
               <Courses />

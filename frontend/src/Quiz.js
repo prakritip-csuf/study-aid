@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
 
 const STORAGE_KEY = 'study-aid:flashcards:v1';
 
@@ -20,18 +21,40 @@ function Quiz() {
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
 
+  const { id } = useParams();
+  const API_URL = 'http://localhost:5000/api';
+
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      const cards = raw ? JSON.parse(raw) : [];
-      setFlashcards(cards);
-      setShuffledQuestions(shuffle(cards));
-      setCurrent(0);
-    } catch (e) {
-      setFlashcards([]);
-      setShuffledQuestions([]);
+    async function loadFromSet() {
+      if (id) {
+        try {
+          const res = await fetch(`${API_URL}/flashcards/sets/${id}/cards`);
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          setFlashcards(data || []);
+          setShuffledQuestions(shuffle(data || []));
+          setCurrent(0);
+        } catch (err) {
+          console.error('Failed to load set cards for quiz', err);
+          setFlashcards([]);
+          setShuffledQuestions([]);
+        }
+      } else {
+        // fallback to localStorage (legacy behavior)
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          const cards = raw ? JSON.parse(raw) : [];
+          setFlashcards(cards);
+          setShuffledQuestions(shuffle(cards));
+          setCurrent(0);
+        } catch (e) {
+          setFlashcards([]);
+          setShuffledQuestions([]);
+        }
+      }
     }
-  }, []);
+    loadFromSet();
+  }, [id]);
 
   // TEMPORARY: Random word bank for distractors until AI-generated options are implemented
   const WORD_BANK = [
