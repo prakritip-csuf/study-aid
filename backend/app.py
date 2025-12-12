@@ -3,6 +3,7 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from models import db
 from routes.flashcards import flashcards_bp
+from routes.progress import progress_bp
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 db_path = os.path.join(basedir, "flashcards.db")
@@ -16,6 +17,7 @@ def create_app():
     db.init_app(app)
 
     app.register_blueprint(flashcards_bp, url_prefix="/api")
+    app.register_blueprint(progress_bp, url_prefix="/api")
 
     @app.route("/")
     def home():

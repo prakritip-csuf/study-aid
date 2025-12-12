@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import './Flashcardset.css';
+import { useParams } from "react-router-dom";
+import "./Flashcardset.css";
+import UserProgress from "./UserProgress";
 
 export default function FlashcardSetView() {
   const { id } = useParams();
@@ -11,8 +14,11 @@ export default function FlashcardSetView() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flip, setFlip] = useState(false);
 
+  const [triggerIncrement, setTriggerIncrement] = useState(false);
   const API_URL = "http://localhost:5000/api";
+  const userId = 1;
 
+  // LOAD CARDS
   const loadCards = async () => {
     try {
       const res = await fetch(`${API_URL}/flashcards/sets/${id}/cards`);
@@ -24,10 +30,7 @@ export default function FlashcardSetView() {
     }
   };
 
-  useEffect(() => {
-    if (id) loadCards();
-  }, [id]);
-
+  // ADD FLASHCARD
   const addCard = async () => {
     if (!question.trim() || !answer.trim()) {
       setError("Both question and answer required.");
@@ -39,11 +42,13 @@ export default function FlashcardSetView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question, answer }),
       });
+
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to add flashcard.");
         return;
       }
+
       setQuestion("");
       setAnswer("");
       setError("");
@@ -53,21 +58,28 @@ export default function FlashcardSetView() {
     }
   };
 
+  // DELETE CARD
   const deleteCard = async (cardId) => {
     await fetch(`${API_URL}/flashcards/cards/${cardId}`, { method: "DELETE" });
     loadCards();
   };
 
+  // SLIDER: NEXT CARD
   const nextCard = () => {
     setFlip(false);
     setCurrentIndex((prev) => (prev + 1) % cards.length);
   };
 
+  // SLIDER: PREVIOUS CARD
   const prevCard = () => {
     setFlip(false);
     setCurrentIndex((prev) => (prev - 1 + cards.length) % cards.length);
   };
 
+  // CARD FLIP
+  const handleFlip = () => setFlip(!flip);
+
+  // UPDATE CARD
   const updateCard = async (cardId, newQ, newA) => {
     try {
       const res = await fetch(`${API_URL}/flashcards/cards/${cardId}`, {
@@ -75,6 +87,7 @@ export default function FlashcardSetView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: newQ, answer: newA }),
       });
+
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || "Failed to update card.");
@@ -86,7 +99,7 @@ export default function FlashcardSetView() {
     }
   };
 
-  // Enhance the cards with local edit state
+  // EDIT HANDLERS
   const handleEditInit = (cardId) =>
     setCards((prev) =>
       prev.map((c) =>
@@ -98,9 +111,7 @@ export default function FlashcardSetView() {
 
   const handleEditCancel = (cardId) =>
     setCards((prev) =>
-      prev.map((c) =>
-        c.id === cardId ? { ...c, editing: false } : c
-      )
+      prev.map((c) => (c.id === cardId ? { ...c, editing: false } : c))
     );
 
   const handleEditChange = (cardId, field, value) =>
@@ -119,6 +130,17 @@ export default function FlashcardSetView() {
     );
   };
 
+  // MARK AS DONE BUTTON
+  const markAsDone = () => {
+    // toggles value, causing UserProgress to call incrementProgress()
+    setTriggerIncrement((prev) => !prev);
+  };
+
+  // LOAD CARDS ON MOUNT
+  useEffect(() => {
+    loadCards();
+  }, []);
+
   return (
     <div className="flashcardset-container">
       <div className="left-panel">
@@ -130,6 +152,7 @@ export default function FlashcardSetView() {
         </div>
         {error && <p className="error-text">{error}</p>}
 
+        {/* CREATE CARD */}
         <div className="create-box">
           <h3>Create Flashcard</h3>
           <input
@@ -146,13 +169,17 @@ export default function FlashcardSetView() {
             onChange={(e) => setAnswer(e.target.value)}
             className="input-field"
           />
-          <button className="btn-primary" onClick={addCard}>Add Flashcard</button>
+          <button className="btn-primary" onClick={addCard}>
+            Add Flashcard
+          </button>
         </div>
 
+        {/* CARD LIST */}
         <div className="card-list">
           {cards.map((card) => (
-            <div key={card.id}
-              className={`flashcard-container`}
+            <div
+              key={card.id}
+              className="flashcard-container"
               onClick={(e) => {
                 if (!card.editing) e.currentTarget.classList.toggle("flipped");
               }}
@@ -163,6 +190,7 @@ export default function FlashcardSetView() {
                     <div className="flashcard-front">{card.question}</div>
                     <div className="flashcard-back">{card.answer}</div>
                   </div>
+
                   <div className="fc-card-actions">
                     <button
                       className="fc-btn-edit"
@@ -229,23 +257,47 @@ export default function FlashcardSetView() {
         </div>
       </div>
 
+      {/* RIGHT PANEL */}
       <div className="right-panel">
         <h3>Flashcard Slider</h3>
+
+        {/* PROGRESS BAR */}
+        <UserProgress
+          userId={1}
+          setId={id}
+          triggerIncrement={triggerIncrement}
+          totalCards={cards.length}
+        />
+
         {cards.length > 0 && (
           <div className="slider-container">
             <div
               className={`slider-card-container ${flip ? "flipped" : ""}`}
-              onClick={() => setFlip(!flip)}
+              onClick={handleFlip}
             >
               <div className="slider-card">
-                <div className="slider-front">{cards[currentIndex].question}</div>
-                <div className="slider-back">{cards[currentIndex].answer}</div>
+                <div className="slider-front">
+                  {cards[currentIndex].question}
+                </div>
+                <div className="slider-back">
+                  {cards[currentIndex].answer}
+                </div>
               </div>
             </div>
+
             <div className="slider-controls">
               <button className="prev" onClick={prevCard}></button>
               <button className="next" onClick={nextCard}></button>
             </div>
+
+            {/* NEW: MARK AS DONE BUTTON */}
+            <button
+              className="btn-primary"
+              style={{ marginTop: "15px" }}
+              onClick={markAsDone}
+            >
+              ✔ Mark as Done
+            </button>
           </div>
         )}
       </div>
