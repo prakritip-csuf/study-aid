@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { FaTrash, FaTrashAlt } from "react-icons/fa";
 import { Link } from "react-router-dom";
 import "./Flashcards.css";
 
@@ -127,7 +128,7 @@ export default function Flashcards() {
           className={`tab-btn ${!showGenerator ? 'active' : ''}`}
           onClick={() => setShowGenerator(false)}
         >
-          Sets
+          Create Sets
         </button>
         <button
           className={`tab-btn ${showGenerator ? 'active' : ''}`}
@@ -141,7 +142,7 @@ export default function Flashcards() {
       {/* Create Set or AI Generator (tabbed) */}
       {!showGenerator ? (
         <div className="create-box">
-          <h3>Create New Flashcard Set</h3>
+          <h3>Create a New Flashcard Set</h3>
           <input
             type="text"
             placeholder="Set Title"
@@ -155,7 +156,7 @@ export default function Flashcards() {
             onChange={(e) => setNewSetDesc(e.target.value)}
             className="textarea-field"
           />
-          <button className="btn-primary" onClick={createSet}>
+          <button className="btn-create" onClick={createSet}>
             Create Set
           </button>
         </div>
@@ -181,7 +182,7 @@ export default function Flashcards() {
             style={{ width: 120 }}
           />
           <div style={{ marginTop: 8 }}>
-            <button className="btn-primary" onClick={generateFlashcards} disabled={genLoading}>
+            <button className="btn-create" onClick={generateFlashcards} disabled={genLoading}>
               {genLoading ? 'Generating...' : 'Generate with AI'}
             </button>
           </div>
@@ -207,7 +208,7 @@ export default function Flashcards() {
                 className="btn-delete"
                 onClick={(e) => deleteSet(set.id, e)}
               >
-                Delete
+                <FaTrashAlt />
               </button>
             </div>
           ))}

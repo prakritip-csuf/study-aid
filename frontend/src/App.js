@@ -9,6 +9,8 @@ import Quiz from './Quiz';
 import RequireAuth from './RequireAuth';
 import LoginPage from './LoginPage';
 import FlashcardSetView from './FlashcardSetView';
+import UserProgress from './UserProgress';
+
 
 function App() {
   return (

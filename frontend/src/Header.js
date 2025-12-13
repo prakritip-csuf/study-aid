@@ -8,7 +8,7 @@ function Header() {
   const { isLoggedIn, logout, setShowLoginModal } = useAuth();
 
   return (
-    <Navbar bg="primary" variant="dark" expand="lg" sticky="top">
+    <Navbar variant="dark" expand="lg" sticky="top">
       <Container>
         <Navbar.Brand as={Link} to="/">StudyAid</Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />

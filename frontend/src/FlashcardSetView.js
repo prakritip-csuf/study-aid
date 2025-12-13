@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
 import './Flashcardset.css';
-import { useParams } from "react-router-dom";
-import "./Flashcardset.css";
 import UserProgress from "./UserProgress";
 
 export default function FlashcardSetView() {
@@ -132,7 +131,6 @@ export default function FlashcardSetView() {
 
   // MARK AS DONE BUTTON
   const markAsDone = () => {
-    // toggles value, causing UserProgress to call incrementProgress()
     setTriggerIncrement((prev) => !prev);
   };
 
@@ -146,7 +144,7 @@ export default function FlashcardSetView() {
       <div className="left-panel">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 className="page-title">Flashcards in Set #{id}</h2>
-          <Link to={`/quiz/${id}`} className="btn-primary" style={{ marginLeft: 12 }}>
+          <Link to={`/quiz/${id}`} className="btn-quiz">
             Take Quiz
           </Link>
         </div>
@@ -169,7 +167,7 @@ export default function FlashcardSetView() {
             onChange={(e) => setAnswer(e.target.value)}
             className="input-field"
           />
-          <button className="btn-primary" onClick={addCard}>
+          <button className="btn-create" onClick={addCard}>
             Add Flashcard
           </button>
         </div>
@@ -259,15 +257,7 @@ export default function FlashcardSetView() {
 
       {/* RIGHT PANEL */}
       <div className="right-panel">
-        <h3>Flashcard Slider</h3>
-
-        {/* PROGRESS BAR */}
-        <UserProgress
-          userId={1}
-          setId={id}
-          triggerIncrement={triggerIncrement}
-          totalCards={cards.length}
-        />
+        <h3 style={{ marginLeft: "60px" }}>Track your Progress</h3>
 
         {cards.length > 0 && (
           <div className="slider-container">
@@ -286,18 +276,16 @@ export default function FlashcardSetView() {
             </div>
 
             <div className="slider-controls">
-              <button className="prev" onClick={prevCard}></button>
-              <button className="next" onClick={nextCard}></button>
+              <button className="prev" onClick={prevCard}><FaChevronLeft /></button>
+              <button className="next" onClick={nextCard}><FaChevronRight /></button>
             </div>
 
-            {/* NEW: MARK AS DONE BUTTON */}
-            <button
-              className="btn-primary"
-              style={{ marginTop: "15px" }}
-              onClick={markAsDone}
-            >
-              ✔ Mark as Done
-            </button>
+          <UserProgress
+          userId={1}
+          setId={id}
+          triggerIncrement={triggerIncrement}
+          totalCards={cards.length}
+          />
           </div>
         )}
       </div>

@@ -1,5 +1,5 @@
 .login-container {
-  max-width: 400px;
+  max-width: 500px;
   margin: 0 auto;
   padding: 2rem 2.5rem;
   background-color: #ffffff;
@@ -7,7 +7,6 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
-
 
 .form-title {
   text-align: center;
@@ -32,30 +31,13 @@
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #34495e;
+  color: #000000;
   margin-bottom: 0.35rem;
   font-size: 0.9rem;
 }
 
-
-.form-control {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  font-size: 1rem;
-  border: 1.8px solid #bdc3c7;
-  border-radius: 6px;
-  transition: border-color 0.3s ease;
-}
-
-.form-control:focus {
-  outline: none;
-  border-color: #2980b9;
-  box-shadow: 0 0 6px rgba(41, 128, 185, 0.3);
-}
-
-
 .btn.primary-btn {
-  background-color: #2980b9;
+  background-color: #305d8d;
   border: none;
   padding: 0.6rem 1.2rem;
   color: white;

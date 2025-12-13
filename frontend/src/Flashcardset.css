@@ -1,18 +1,17 @@
 .flashcardset-container {
-  display: flex;
-  justify-content: space-between;
-  gap: 30px;
-  max-width: 1200px;
-  margin: 30px auto;
-  padding: 10px;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 32px;
+  padding: 18px;
+  max-width: 1500px;
+  margin: 0 auto;
 }
 
-.left-panel {
-  width: 55%;
-}
-
+.left-panel,
 .right-panel {
-  width: 40%;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
 .page-title {
@@ -38,19 +37,19 @@
   font-size: 15px;
 }
 
-.btn-primary {
-  width: 100%;
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 12px;
-  border-radius: 8px;
+.btn-quiz {
+  display: inline-block;
+  padding: 6px 12px;
+  font-size: 1.15rem;
+  font-weight: 500;
+  background-color: #4caf50; 
+  color: #fff !important;
+  border: 1px solid #292b29;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: all 0.3s ease;
   cursor: pointer;
-  font-size: 16px;
-}
 
-.btn-primary:hover {
-  background: #0069d9;
 }
 
 .card-list {
@@ -119,40 +118,22 @@
   justify-content: space-evenly;
 }
 
-.btn-edit {
-  padding: 6px 12px;
-  background-color: #00529b;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.btn-edit:hover {
-  background-color: #003f7a;
-}
-
-.btn-dlt {
-  padding: 6px 12px;
-  background-color: #8a1a1a;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.btn-dlt:hover {
-  background-color: #c0392b;
-}
-
 .slider-container {
-  margin-top: 20px;
-  text-align: center;
+  width: 800px; 
+  max-width: 90%;
+  margin: 20px auto;
+  perspective: 1000px;
+  position: relative;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 12px;
+  border: 1px solid #ddd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .slider-card-container {
   width: 100%;
-  height: 250px;
+  height: 450px;
   border-radius: 12px;
   border: 1px solid #ccc;
   background: white;
@@ -193,37 +174,50 @@
 }
 
 .slider-back {
-  background: #ececec;
+  background: #e9ebeb;
   transform: rotateY(180deg);
 }
 
 .slider-controls {
   display: flex;
   justify-content: center;
-  gap: 25px;
+  margin-top: 12px;
 }
 
 .slider-controls button {
-  font-size: 28px;
-  padding: 8px 18px;
-  border-radius: 50%;
+  background-color: #2196f3;
   border: none;
-  background: #007bff;
   color: white;
+  font-size: 1.2rem;
+  padding: 6px 12px;
+  border-radius: 50px;
   cursor: pointer;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
 }
 
 .slider-controls button:hover {
-  background: #0060c7;
+  background-color: #1e5a8b;
+  transform: translateY(-2px);
 }
 
-.slider-controls button.prev::before {
-  content: "◀";
+
+.slider-container .mark-done-btn {
+  position: absolute;
+  bottom: 15px;
+  right: 15px;
+  background-color: #2196f3;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.2s ease;
 }
 
-.slider-controls button.next::before {
-  content: "▶";
+.slider-container .mark-done-btn:hover {
+  background-color: #1976d2;
+  transform: translateY(-2px);
 }
 
 .fc-edit-box {
@@ -235,36 +229,50 @@
   gap: 14px;
   box-shadow: 0 1px 4px rgba(0,0,0,0.10);
 }
+
 .fc-edit-field {
   font-size: 1rem;
   padding: 8px 12px;
   border-radius: 6px;
   border: 1px solid #ccc;
 }
+
 .fc-edit-actions {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
 }
+
 .fc-btn-edit {
-  background: #1e90ff;
-  color: #fff;
+  background: #ffffff;
+  color: #292929;
   border-radius: 5px;
-  border: none;
+  border: solid 1px #464646;
   padding: 6px 18px;
+  margin-top: 10px;
   cursor: pointer;
 }
+
 .fc-btn-dlt, .fc-btn-delete {
-  background: #e74c3c;
-  color: #fff;
+  background: #fcfcfc;
+  color: #2b2b2b;
   border-radius: 5px;
-  border: none;
+  border: solid 1px #464646;
   padding: 6px 18px;
+  margin-top: 10px;
   cursor: pointer;
 }
-.fc-btn-delete {
-  background: #b22222;
+
+.fc-btn-dlt:hover {
+  background-color: #c0392b;
+  color: #ffffff;
 }
+
+.fc-btn-edit:hover {
+  background-color: #3498db;
+  color: #ffffff;
+}
+
 .fc-card-actions {
   display: flex;
   gap: 12px;
