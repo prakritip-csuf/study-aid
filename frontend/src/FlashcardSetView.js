@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import './Flashcardset.css';
-import { useParams } from "react-router-dom";
 import "./Flashcardset.css";
 import UserProgress from "./UserProgress";
 
@@ -146,9 +145,6 @@ export default function FlashcardSetView() {
       <div className="left-panel">
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h2 className="page-title">Flashcards in Set #{id}</h2>
-          <Link to={`/quiz/${id}`} className="btn-primary" style={{ marginLeft: 12 }}>
-            Take Quiz
-          </Link>
         </div>
         {error && <p className="error-text">{error}</p>}
 

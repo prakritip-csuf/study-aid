@@ -19,13 +19,16 @@ function Quiz() {
   const [selectedSet, setSelectedSet] = useState(null);
   const [loadingSets, setLoadingSets] = useState(false);
   const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState([]); // user's selected answers per question
-  const [results, setResults] = useState([]); // saved quiz attempts
+  const [answers, setAnswers] = useState([]); 
+  const [results, setResults] = useState([]); 
   const [viewingResultIndex, setViewingResultIndex] = useState(null);
   const [choices, setChoices] = useState([]);
   const [selected, setSelected] = useState(null);
   const [score, setScore] = useState(0);
   const [showResult, setShowResult] = useState(false);
+  const [distractors, setDistractors] = useState([]); 
+  const [distractorsLoading, setDistractorsLoading] = useState(false);
+  const [distractorsError, setDistractorsError] = useState(null);
 
   const API_URL = 'http://localhost:5000/api';
   const RESULTS_KEY = 'study-aid:quiz-results:v1';
@@ -121,30 +124,47 @@ function Quiz() {
     return () => { mounted = false; };
   }, [selectedSet]);
 
+  // Start quiz handler: prepare shuffled questions and prefetch distractors
+  const startQuiz = async () => {
+    const shuffled = shuffle(flashcards || []);
+    setShuffledQuestions(shuffled);
+    setCurrent(0);
+    setScore(0);
+    setAnswers([]);
+    setViewingResultIndex(null);
+    setShowResult(false);
+    setDistractors([]);
+    setDistractorsError(null);
+    if (shuffled.length > 0) {
+      await prefetchDistractorsForQuestions(shuffled);
+    }
+  };
 
+
+  // When shuffledQuestions or current changes, populate choices using prefetched distractors
   useEffect(() => {
     if (shuffledQuestions.length > 0 && current < shuffledQuestions.length) {
       const correct = shuffledQuestions[current].answer;
-      // Gather possible incorrects from all flashcards (excluding correct)
-      let flashcardIncorrects = flashcards.filter(c => c.answer !== correct).map(c => c.answer);
-      // Gather possible incorrects from word bank (excluding correct)
-      let wordBankIncorrects = WORD_BANK.filter(w => w !== correct);
-      // Shuffle and pick up to 2 from flashcards, up to 2 from word bank
-      let chosenFlashcardIncorrects = shuffle(flashcardIncorrects).slice(0, 2);
-      let chosenWordBankIncorrects = shuffle(wordBankIncorrects).slice(0, 2);
-      // Combine, remove duplicates, and ensure no correct answer
-      let allIncorrects = shuffle([...chosenFlashcardIncorrects, ...chosenWordBankIncorrects])
-        .filter((ans, idx, arr) => ans !== correct && arr.indexOf(ans) === idx);
-      // If not enough, fill from word bank
-      while (allIncorrects.length < 3) {
-        let candidates = WORD_BANK.filter(w => w !== correct && !allIncorrects.includes(w));
-        let word = candidates.length > 0 ? candidates[Math.floor(Math.random() * candidates.length)] : '';
-        allIncorrects.push(word);
+      // Use prefetched distractors if available
+      const d = (Array.isArray(distractors) && distractors[current]) ? (distractors[current] || []) : [];
+      let incorrects = d.filter(a => a && a !== correct);
+
+      // If distractors not ready or insufficient, fall back to previous local logic
+      if (incorrects.length < 3) {
+        // gather from other flashcards first
+        const fromCards = shuffle(flashcards.filter(c => c.answer !== correct).map(c => c.answer)).slice(0, 3 - incorrects.length);
+        incorrects = [...incorrects, ...fromCards];
       }
-      // Final choices: correct + 3 incorrects
-      const allChoices = shuffle([correct, ...allIncorrects.slice(0, 3)]);
+      let idx = 0;
+      while (incorrects.length < 3 && idx < WORD_BANK.length) {
+        const w = WORD_BANK[idx++];
+        if (w !== correct && !incorrects.includes(w)) incorrects.push(w);
+      }
+
+      const allChoices = shuffle([correct, ...incorrects.slice(0, 3)]);
       setChoices(allChoices);
       setSelected(null);
+
       // ensure answers array matches length
       setAnswers((prev) => {
         const next = prev ? prev.slice() : [];
@@ -152,7 +172,56 @@ function Quiz() {
         return next;
       });
     }
-  }, [shuffledQuestions, current, flashcards]);
+  }, [shuffledQuestions, current, flashcards, distractors]);
+
+  // Prefetch distractors for all questions in the provided array
+  async function prefetchDistractorsForQuestions(questions) {
+    if (!questions || questions.length === 0) return [];
+    setDistractorsLoading(true);
+    setDistractorsError(null);
+    try {
+      const promises = questions.map((q) =>
+        fetch(`${API_URL}/flashcards/distractors`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: q.question, answer: q.answer, count: 3 }),
+        }).then(async (r) => {
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          return r.json();
+        }).catch(() => null)
+      );
+
+      const results = await Promise.all(promises);
+      const out = results.map((res, idx) => {
+        const q = questions[idx];
+        if (Array.isArray(res) && res.length > 0) {
+          return res.slice(0, 3).map(x => String(x).trim());
+        }
+        // fallback generation: use answers from other cards and word bank
+        const correct = q.answer;
+        const fromCards = shuffle(flashcards.filter(c => c.answer !== correct).map(c => c.answer)).slice(0, 3);
+        const arr = [];
+        for (let a of fromCards) {
+          if (a && a !== correct && !arr.includes(a)) arr.push(a);
+        }
+        let wi = 0;
+        while (arr.length < 3 && wi < WORD_BANK.length) {
+          const w = WORD_BANK[wi++];
+          if (w !== correct && !arr.includes(w)) arr.push(w);
+        }
+        return arr.slice(0, 3);
+      });
+      setDistractors(out);
+      setDistractorsLoading(false);
+      return out;
+    } catch (err) {
+      console.error('Prefetch distractors failed', err);
+      setDistractorsError(String(err));
+      setDistractors([]);
+      setDistractorsLoading(false);
+      return [];
+    }
+  }
 
   function handleSelect(choice) {
     setSelected(choice);
@@ -224,7 +293,7 @@ function Quiz() {
             setShowResult(false);
           }}>Restart Quiz</button>
         </div>
-        {/* Past Results list for this set */}
+        {}
         <div className="results-list mb-3">
           <h4>Past Attempts ({results.filter(r => r.setId === selectedSet).length})</h4>
           <p>Best score: {(() => {
@@ -245,7 +314,7 @@ function Quiz() {
               </li>
             ))}
           </ul>
-          {/* Show result details when a past attempt is selected */}
+          {}
           {viewingResultIndex !== null && (() => {
             const setResults = results.filter(r => r.setId === selectedSet);
             const r = setResults[viewingResultIndex];
@@ -291,7 +360,9 @@ function Quiz() {
                 <option key={s.id} value={s.id}>{s.title || (s.id === 'local' ? 'Local Flashcards (browser)' : `Set ${s.id}`)}</option>
               ))}
             </select>
-            <button className="btn btn-outline-primary" onClick={() => { setShuffledQuestions(shuffle(flashcards)); setCurrent(0); setScore(0); setAnswers([]); setViewingResultIndex(null); setShowResult(false); }}>Start Quiz</button>
+            <button className="btn btn-outline-primary" onClick={startQuiz} disabled={distractorsLoading || flashcards.length === 0}>
+              {distractorsLoading ? 'Preparing…' : 'Start Quiz'}
+            </button>
           </div>
         )}
       </div>

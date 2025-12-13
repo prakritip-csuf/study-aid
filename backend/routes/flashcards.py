@@ -205,3 +205,73 @@ def generate_flashcards():
         db.session.commit()
 
     return jsonify(created), 201
+
+
+# AI-generated distractors for quiz questions
+@flashcards_bp.route("/flashcards/distractors", methods=["POST"])
+def generate_distractors():
+    """Return a small list of plausible incorrect answers (distractors).
+
+    Request JSON:
+      { "question": "...", "answer": "...", "count": 3 }
+
+    Response: JSON array of strings (distractors)
+    """
+    data = request.get_json() or {}
+    question = (data.get("question") or "").strip()
+    answer = (data.get("answer") or "").strip()
+    try:
+        count = int(data.get("count", 3))
+    except Exception:
+        count = 3
+    count = max(1, min(count, 6))
+
+    if not question or not answer:
+        return jsonify({"error": "question and answer are required"}), 400
+
+    api_key = os.environ.get("OPENAI_API_KEY")
+    if not api_key:
+        return jsonify({"error": "OPENAI_API_KEY not set in environment"}), 500
+
+    prompt = (
+        "You are an assistant that generates plausible multiple-choice distractors.\n"
+        "Given the question and the correct answer, produce %d concise, plausible incorrect answer options.\n"
+        "Return only a JSON array of strings (no explanation).\n"
+        "Question: '%s'\n"
+        "Correct answer: '%s'\n"
+        "Example output: [\"option1\", \"option2\", \"option3\"]\n"
+    ) % (count, question.replace('\n', ' '), answer.replace('\n', ' '))
+
+    try:
+        client = openai.OpenAI(api_key=api_key)
+        resp = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7,
+            max_tokens=200,
+        )
+        content = resp.choices[0].message.content
+    except Exception as e:
+        return jsonify({"error": "AI request failed", "details": str(e)}), 502
+
+    # Try to parse as JSON array
+    try:
+        arr = _extract_json_array(content)
+        if not isinstance(arr, list):
+            raise ValueError("Expected JSON array")
+        # ensure strings
+        arr = [str(x).strip() for x in arr if x]
+    except Exception:
+        try:
+            parsed = json.loads(content)
+            if isinstance(parsed, list):
+                arr = [str(x).strip() for x in parsed if x]
+            else:
+                raise ValueError("Not a list")
+        except Exception as exc:
+            return jsonify({"error": "Failed to parse AI response", "raw": content, "details": str(exc)}), 502
+
+    # Trim to requested count
+    arr = [a for a in arr if a and a.lower() != answer.lower()]
+    arr = arr[:count]
+    return jsonify(arr), 200
